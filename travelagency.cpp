@@ -35,87 +35,103 @@ void TravelAgency::readFile()
     //um die JSON Datei in QJsonDocumentobjekt zu zerlegen
     QJsonDocument jsonDatei = QJsonDocument::fromJson(dateiInhalt.toUtf8());
 
-    if (jsonDatei.isNull())
+
+    //Weitere Checks
+    if ( jsonDatei.isNull() )
         cerr << "JSON-Datei ist ungueltig";
 
-    if ( jsonDatei.isArray() )
+
+    if( !jsonDatei.isArray() )
+        cerr << "JSON-Datei ist kein Array";
+
+    QJsonArray jsonArray = jsonDatei.array();
+
+    int flugBuchungen{0}, flugBuchungenWert{0}, mietwagenBuchungen{0}, mietwagenBuchungenWert{0},
+        hotelReservierungen{0}, hotelReservierungenWert{0}, zugBuchungen{0}, zugBuchungenWert{0};
+
+    for ( const QJsonValue &jsonValue : jsonArray )
     {
-        QJsonArray jsonArray = jsonDatei.array();
+        if( !jsonValue.isObject() )
+            cerr << "Invalid JSON-Value";
 
-        int flugBuchungen{0}, hotelReservierungen{0};
+        QJsonObject jsonObject = jsonValue.toObject();
 
-        for ( const QJsonValue &jsonValue : jsonArray )
+        //Umwandlung des Types aller Variablen, die immer benutzen werden (fuer Booking object im Konstruktor)
+        string id = jsonObject[ "id" ].toString().toStdString();
+        double price = jsonObject[ "price" ].toDouble();
+        string fromDate = jsonObject[ "fromDate" ].toString().toStdString();
+        string toDate = jsonObject[ "toDate" ].toString().toStdString();
+
+        //Zugriff auf den Type des jsonObjekts
+        QString objectType = jsonObject[ "type" ].toString();
+
+        if ( objectType == "RentalCar" )
         {
-            if ( jsonValue.isObject() )      //bisa di clean hrsnya pake !jsonObject aja
-            {
-                QJsonObject jsonObject = jsonValue.toObject();
+            string pickupLocation = jsonObject[ "pickupLocation" ].toString().toStdString();
+            string returnLocation = jsonObject[ "returnLocation" ].toString().toStdString();
+            string company = jsonObject[ "company" ].toString().toStdString();
 
-                //Umwandlung aller Variablen, die immer benutzen werden (fuer Booking object im Konstruktor)
-                string id = jsonObject[ "id" ].toString().toStdString();
-                double price = jsonObject[ "price" ].toDouble();
-                string fromDate = jsonObject[ "fromDate" ].toString().toStdString();
-                string toDate = jsonObject[ "toDate" ].toString().toStdString();
+            RentalCarReservation* rentalCarReservation = new RentalCarReservation(id, price, fromDate, toDate, pickupLocation, returnLocation, company);
 
-                //Zugriff auf den Type des jsonObjekts
-                QString objectType = jsonObject[ "type" ].toString();
+            bookings.push_back( rentalCarReservation );
 
-                if ( objectType == "RentalCar" )
-                {
-                    string pickupLocation = jsonObject[ "pickupLocation" ].toString().toStdString();
-                    string returnLocation = jsonObject[ "returnLocation" ].toString().toStdString();
-                    string company = jsonObject[ "company" ].toString().toStdString();
-
-                    RentalCarReservation* rentalCarReservation = new RentalCarReservation(id, price, fromDate, toDate, pickupLocation, returnLocation, company);
-
-                    bookings.push_back( rentalCarReservation );
-                }
-                else if ( objectType == "Hotel" )
-                {
-                    string hotel = jsonObject[ "hotel" ].toString().toStdString();
-                    string town = jsonObject[ "town" ].toString().toStdString();
-
-                    HotelBooking* hotelBooking = new HotelBooking(id, price, fromDate, toDate, hotel, town);
-
-                    bookings.push_back( hotelBooking );
-                    hotelReservierungen++;
-                }
-                else if ( objectType == "Flight" )
-                {
-                    string fromDestination = jsonObject[ "fromDest" ].toString().toStdString();
-                    string toDestination = jsonObject[ "toDate" ].toString().toStdString();
-                    string airline = jsonObject[ "airline "].toString().toStdString();
-
-                    FlightBooking* flightBooking = new FlightBooking(id, price, fromDate, toDate, fromDestination, toDestination, airline);
-
-                    bookings.push_back( flightBooking );
-
-                    flugBuchungen++;
-                }
-                else if( objectType == "Train" )
-                {
-                    string fromDestination = jsonObject[ "fromDate" ].toString().toStdString();
-                    string toDestination = jsonObject[ "toDate" ].toString().toStdString();
-                    string departureTime = jsonObject[ "departureTime" ].toString().toStdString();
-                    string arrivalTime = " ";   //es gibt keine arrivalTime Objektattribute im jsonfile.
-                    vector<string> connectingStations;
-
-                    if (jsonObject.contains("connectingStations") && jsonObject[ "connectingStations" ].isArray() )
-                    {
-                        QJsonArray stationsArray = jsonObject[ "connectingStations" ].toArray();
-
-                        for ( const QJsonValue &station : stationsArray )
-                        {
-                            connectingStations.push_back( station.toString().toStdString() );
-                        }
-                    }
-
-                    TrainTicket* trainObject = new TrainTicket(id, price, fromDate, toDate, fromDestination, toDestination, departureTime, arrivalTime, connectingStations);
-
-                    bookings.push_back( trainObject );
-                }
-
-            }
+            mietwagenBuchungen++;
+            mietwagenBuchungenWert+=price;
         }
-        cout << "sucessful, TODO AUFGABE 4" << flugBuchungen << hotelReservierungen;
+        else if ( objectType == "Hotel" )
+        {
+            string hotel = jsonObject[ "hotel" ].toString().toStdString();
+            string town = jsonObject[ "town" ].toString().toStdString();
+
+            HotelBooking* hotelBooking = new HotelBooking(id, price, fromDate, toDate, hotel, town);
+
+            bookings.push_back( hotelBooking );
+
+            hotelReservierungen++;
+            hotelReservierungenWert+=price;
+        }
+        else if ( objectType == "Flight" )
+        {
+            string fromDestination = jsonObject[ "fromDest" ].toString().toStdString();
+            string toDestination = jsonObject[ "toDate" ].toString().toStdString();
+            string airline = jsonObject[ "airline "].toString().toStdString();
+
+            FlightBooking* flightBooking = new FlightBooking(id, price, fromDate, toDate, fromDestination, toDestination, airline);
+
+            bookings.push_back( flightBooking );
+
+            flugBuchungen++;
+            flugBuchungenWert+=price;
+        }
+        else if( objectType == "Train" )
+        {
+            string fromDestination = jsonObject[ "fromDate" ].toString().toStdString();
+            string toDestination = jsonObject[ "toDate" ].toString().toStdString();
+            string departureTime = jsonObject[ "departureTime" ].toString().toStdString();
+            string arrivalTime = " ";   //es gibt keine arrivalTime Objektattribute im jsonfile.
+            vector<string> connectingStations;
+
+            if (jsonObject.contains("connectingStations") && jsonObject[ "connectingStations" ].isArray() )
+            {
+                QJsonArray stationsArray = jsonObject[ "connectingStations" ].toArray();
+
+                for ( const QJsonValue &station : stationsArray )
+                {
+                        connectingStations.push_back( station.toString().toStdString() );
+                }
+            }
+
+            TrainTicket* trainObject = new TrainTicket(id, price, fromDate, toDate, fromDestination, toDestination, departureTime, arrivalTime, connectingStations);
+
+            bookings.push_back( trainObject );
+
+            zugBuchungen++;
+            zugBuchungenWert+=price;
+        }
     }
+
+    cout << "Es Wurden " << flugBuchungen << " Flugbuchungen im Wert von " << flugBuchungenWert << " Euro, " << mietwagenBuchungen << " Mietwagenbuchungen im Wert von "
+         << mietwagenBuchungenWert << " Euro, " << hotelReservierungen << " Hotelreservierungen im Wert von " << hotelReservierungenWert << " Euro, "
+         << zugBuchungen << " Zugbuchungen im Wert von " << zugBuchungenWert << " Euro, angelegt" << endl;
+
 }
