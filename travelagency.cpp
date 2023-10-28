@@ -31,62 +31,133 @@ void TravelAgency::readBinaryFile()
         cerr << "Binaerdatei kann nicht geoeffnet werden" <<endl;
 
     //countvariablen fuer die Ausgabe
-    int flight{}, flightTotalPrice{};       //TODO Countnya
+    double flightCount{}, flightTotalPrice{}, rentalCarCount{}, rentalCarTotalPrice{}, hotelBookingsCount{}, hotelTotalPrice{}, trainCount{}, trainTotalPrice{};
 
     //8+1 fuer Nullterminator
     char type{}; char id[39]; double price{}; char fromDate[9]; char toDate[9];
     //Flight
     char fromDestination[4]; char toDestination[4]; char airline[16];
+    //RentalCar
+    char pickupLocation[16]; char returnLocation[16]; char company[16];
+    //Hotel
+    char hotelName[16]; char hotelTown[16];
+    //Train  fromDestination, toDestination, departureTime, arrivalTime, connectingStations
+    char trainFromDestination[16]; char trainToDestination[16]; char departureTime[6]; char arrivalTime[6];
+
 
     if ( !binaryDatei )
         cerr << "Binaerdatei error" << endl;
 
     while ( !binaryDatei.eof() )
     {
-        //Zugriff auf die Bookingvariablen von der Binaerdatei
-        binaryDatei.read( reinterpret_cast<char*>(&type), sizeof (type) );
-        binaryDatei.read( reinterpret_cast<char*>(&id), sizeof (id)-1 );
-        binaryDatei.read( reinterpret_cast<char*>(&price), sizeof (price) );
-        binaryDatei.read( reinterpret_cast<char*>(&fromDate), sizeof (fromDate)-1 );
-        binaryDatei.read( reinterpret_cast<char*>(&toDate), sizeof (toDate)-1 );
-
         //um das Chararray zu terminieren (also Chararray braucht null terminator)
         id[38] = '\0';
         fromDate[8] = '\0';
         toDate[8] = '\0';
 
+        //Zugriff auf die Bookingvariablen von der Binaerdatei
+        binaryDatei.read( reinterpret_cast<char*>(&type), sizeof (type) );
+        binaryDatei.read( reinterpret_cast<char*>(&id), sizeof (id) - 1 );
+        binaryDatei.read( reinterpret_cast<char*>(&price), sizeof (price) );
+        binaryDatei.read( reinterpret_cast<char*>(&fromDate), sizeof (fromDate) - 1 );
+        binaryDatei.read( reinterpret_cast<char*>(&toDate), sizeof (toDate) - 1 );
 
-        if ( type == 'F')
+        switch ( type ) {
+        case 'F':
         {
-            binaryDatei.read( reinterpret_cast<char*>(&fromDestination), sizeof (fromDestination) );
-            binaryDatei.read( reinterpret_cast<char*>(&toDestination), sizeof (toDestination) );
-            binaryDatei.read( reinterpret_cast<char*>(&airline), sizeof (airline) );
-
             fromDestination[3] = '\0';
             toDestination[3] = '\0';
+            airline[15] = '\0';
 
-            // Trim trailing spaces from the airline name
-            for (int i = 15; i >= 0; i--) {
-                if (airline[i] != ' ') {
-                    airline[i + 1] = '\0'; // Null-terminate at the first non-space character
-                    break;
-                }
-            }
+            binaryDatei.read( reinterpret_cast<char*>(&fromDestination), sizeof (fromDestination) - 1 );
+            binaryDatei.read( reinterpret_cast<char*>(&toDestination), sizeof (toDestination) - 1 );
+            binaryDatei.read( reinterpret_cast<char*>(&airline), sizeof (airline) - 1 );
 
             FlightBooking* flightBooking = new FlightBooking(id, price, fromDate, toDate, fromDestination, toDestination, airline);
 
             bookings.push_back(flightBooking);
 
-            flight++;
+            flightCount++;
             flightTotalPrice+=price;
+            break;
         }
-        else if( type == 'R')
+        case 'R':
         {
+            pickupLocation[15] = '\0';
+            returnLocation[15] = '\0';
+            company[15] = '\0';
+
+            binaryDatei.read( reinterpret_cast<char*>(&pickupLocation), sizeof (pickupLocation) - 1 );
+            binaryDatei.read( reinterpret_cast<char*>(&returnLocation), sizeof (returnLocation) - 1 );
+            binaryDatei.read( reinterpret_cast<char*>(&company), sizeof (company) - 1 );
+
+            RentalCarReservation* rentalCar = new RentalCarReservation(id, price, fromDate, toDate, pickupLocation, returnLocation, company);
+
+            bookings.push_back(rentalCar);
+
+            rentalCarCount++;
+            rentalCarTotalPrice+=price;
+            break;
+        }
+        case 'H':
+        {
+            hotelName[15] = '\0';
+            hotelTown[15] = '\0';
+
+            binaryDatei.read( reinterpret_cast<char*>(&hotelName), sizeof (hotelName) - 1 );
+            binaryDatei.read( reinterpret_cast<char*>(&hotelTown), sizeof (hotelTown) - 1 );
+
+            HotelBooking* hotelBooking = new HotelBooking(id, price, fromDate, toDate, hotelName, hotelTown);
+
+            bookings.push_back(hotelBooking);
+
+            hotelBookingsCount++;
+            hotelTotalPrice+=price;
+            break;
+        }
+        case 'T':
+        {
+            trainFromDestination[15] = '\0';
+            trainToDestination[15] = '\0';
+            departureTime[5] = '\0';
+            arrivalTime[5] = '\0';
+            vector<string> connectingStations;
+            int connectingStationsSize;
+
+            binaryDatei.read( reinterpret_cast<char*>(&trainFromDestination), sizeof (trainFromDestination) - 1 );
+            binaryDatei.read( reinterpret_cast<char*>(&trainToDestination), sizeof (trainToDestination) - 1 );
+            binaryDatei.read( reinterpret_cast<char*>(&departureTime), sizeof (arrivalTime) - 1 );
+            binaryDatei.read( reinterpret_cast<char*>(&arrivalTime), sizeof (arrivalTime) - 1 );
+            binaryDatei.read( reinterpret_cast<char*>(&connectingStationsSize), sizeof (connectingStationsSize));
+
+            char station[16];
+            station[15] = '\0';
+
+            for (int i = 0; i < connectingStationsSize; i++)
+            {
+                binaryDatei.read( reinterpret_cast<char*>(&station), sizeof (station) - 1 );
+                connectingStations.push_back(station);
+            }
+
+
+
+            TrainTicket* trainBooking = new TrainTicket(id, price, fromDate, toDate, trainFromDestination, trainToDestination, departureTime, arrivalTime, connectingStations);
+
+            bookings.push_back(trainBooking);
+            cout << trainBooking->showDetails() << endl;
+
+            trainCount++;
+            trainTotalPrice+=price;
+            break;
+        }
 
         }
     }
 
-    cout << fromDestination << " Flights and total price: " << toDestination << "   " <<  airline;
+    cout << "Es Wurden " << flightCount << " Flugbuchungen im Wert von " << flightTotalPrice << " Euro, " << rentalCarCount << " Mietwagenbuchungen im Wert von "
+         << rentalCarTotalPrice << " Euro, " << hotelBookingsCount << " Hotelreservierungen im Wert von " << hotelTotalPrice << " Euro, "
+         << trainCount << " Zugbuchungen im Wert von " << trainTotalPrice << " Euro, angelegt" << endl << endl;
+
     binaryDatei.close();
 }
 
@@ -116,7 +187,7 @@ void TravelAgency::readFile()
 
     QJsonArray jsonArray = jsonDatei.array();
 
-    int flugBuchungen{0}, flugBuchungenWert{0}, mietwagenBuchungen{0}, mietwagenBuchungenWert{0},
+    double flugBuchungen{0}, flugBuchungenWert{0}, mietwagenBuchungen{0}, mietwagenBuchungenWert{0},
         hotelReservierungen{0}, hotelReservierungenWert{0}, zugBuchungen{0}, zugBuchungenWert{0};
 
     for ( const QJsonValue &jsonValue : jsonArray )
@@ -178,7 +249,7 @@ void TravelAgency::readFile()
             string fromDestination = jsonObject[ "fromDate" ].toString().toStdString();
             string toDestination = jsonObject[ "toDate" ].toString().toStdString();
             string departureTime = jsonObject[ "departureTime" ].toString().toStdString();
-            string arrivalTime = " ";   //es gibt keine arrivalTime Objektattribute im jsonfile.
+            string arrivalTime = jsonObject[ "arrivalTime" ].toString().toStdString();;
             vector<string> connectingStations;
 
             if (jsonObject.contains("connectingStations") && jsonObject[ "connectingStations" ].isArray() )

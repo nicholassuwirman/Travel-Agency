@@ -20,8 +20,7 @@ int main()
         cout << "b eingeben fuer Binaerdatei" << endl;
         cin >> antwort;
         cout << endl;
-        if( antwort == "j" )
-            travelAgencyObject.readFile();
+        if( antwort == "j" ) travelAgencyObject.readFile();
         else if ( antwort == "b" )
             travelAgencyObject.readBinaryFile();
         else
