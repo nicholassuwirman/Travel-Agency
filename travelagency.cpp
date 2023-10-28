@@ -21,13 +21,83 @@ TravelAgency::~TravelAgency()
     bookings.clear();
 }
 
+
+void TravelAgency::readBinaryFile()
+{
+    ifstream binaryDatei;
+    binaryDatei.open("bookingsBinary.bin", ios::in | ios::binary);
+
+    if ( !binaryDatei.is_open() )
+        cerr << "Binaerdatei kann nicht geoeffnet werden" <<endl;
+
+    //countvariablen fuer die Ausgabe
+    int flight{}, flightTotalPrice{};       //TODO Countnya
+
+    //8+1 fuer Nullterminator
+    char type{}; char id[39]; double price{}; char fromDate[9]; char toDate[9];
+    //Flight
+    char fromDestination[4]; char toDestination[4]; char airline[16];
+
+    if ( !binaryDatei )
+        cerr << "Binaerdatei error" << endl;
+
+    while ( !binaryDatei.eof() )
+    {
+        //Zugriff auf die Bookingvariablen von der Binaerdatei
+        binaryDatei.read( reinterpret_cast<char*>(&type), sizeof (type) );
+        binaryDatei.read( reinterpret_cast<char*>(&id), sizeof (id)-1 );
+        binaryDatei.read( reinterpret_cast<char*>(&price), sizeof (price) );
+        binaryDatei.read( reinterpret_cast<char*>(&fromDate), sizeof (fromDate)-1 );
+        binaryDatei.read( reinterpret_cast<char*>(&toDate), sizeof (toDate)-1 );
+
+        //um das Chararray zu terminieren (also Chararray braucht null terminator)
+        id[38] = '\0';
+        fromDate[8] = '\0';
+        toDate[8] = '\0';
+
+
+        if ( type == 'F')
+        {
+            binaryDatei.read( reinterpret_cast<char*>(&fromDestination), sizeof (fromDestination) );
+            binaryDatei.read( reinterpret_cast<char*>(&toDestination), sizeof (toDestination) );
+            binaryDatei.read( reinterpret_cast<char*>(&airline), sizeof (airline) );
+
+            fromDestination[3] = '\0';
+            toDestination[3] = '\0';
+
+            // Trim trailing spaces from the airline name
+            for (int i = 15; i >= 0; i--) {
+                if (airline[i] != ' ') {
+                    airline[i + 1] = '\0'; // Null-terminate at the first non-space character
+                    break;
+                }
+            }
+
+            FlightBooking* flightBooking = new FlightBooking(id, price, fromDate, toDate, fromDestination, toDestination, airline);
+
+            bookings.push_back(flightBooking);
+
+            flight++;
+            flightTotalPrice+=price;
+        }
+        else if( type == 'R')
+        {
+
+        }
+    }
+
+    cout << fromDestination << " Flights and total price: " << toDestination << "   " <<  airline;
+    binaryDatei.close();
+}
+
+
 void TravelAgency::readFile()
 {
     //Datei lesen
     QString dateiName = "bookings.json";
     QFile datei(dateiName);
     if ( !datei.open(QIODevice::ReadOnly) )
-        cerr << "Datei konnte nicht geoeffnet werden";
+        cerr << "Datei kann nicht geoeffnet werden" << endl;
 
     QString dateiInhalt = datei.readAll();
     datei.close();
@@ -132,6 +202,6 @@ void TravelAgency::readFile()
 
     cout << "Es Wurden " << flugBuchungen << " Flugbuchungen im Wert von " << flugBuchungenWert << " Euro, " << mietwagenBuchungen << " Mietwagenbuchungen im Wert von "
          << mietwagenBuchungenWert << " Euro, " << hotelReservierungen << " Hotelreservierungen im Wert von " << hotelReservierungenWert << " Euro, "
-         << zugBuchungen << " Zugbuchungen im Wert von " << zugBuchungenWert << " Euro, angelegt" << endl;
+         << zugBuchungen << " Zugbuchungen im Wert von " << zugBuchungenWert << " Euro, angelegt" << endl << endl;
 
 }

@@ -22,6 +22,7 @@ public:
     TravelAgency(const std::vector<Booking*> &bookings); //todo
     void readFile();
     ~TravelAgency();
+    void readBinaryFile();
 
 private:
     std::vector<Booking*> bookings;
