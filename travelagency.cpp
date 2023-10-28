@@ -21,7 +21,7 @@ TravelAgency::~TravelAgency()
     bookings.clear();
 }
 
-
+//TODO: 50/49 Flugbuchungen ist richtig?
 void TravelAgency::readBinaryFile()
 {
     ifstream binaryDatei;
@@ -139,17 +139,19 @@ void TravelAgency::readBinaryFile()
                 connectingStations.push_back(station);
             }
 
-
-
             TrainTicket* trainBooking = new TrainTicket(id, price, fromDate, toDate, trainFromDestination, trainToDestination, departureTime, arrivalTime, connectingStations);
 
             bookings.push_back(trainBooking);
-            cout << trainBooking->showDetails() << endl;
 
             trainCount++;
             trainTotalPrice+=price;
             break;
         }
+        default:
+        {
+            cout << "Unbekannt Typ";
+        }
+
 
         }
     }
@@ -176,7 +178,6 @@ void TravelAgency::readFile()
     //um die JSON Datei in QJsonDocumentobjekt zu zerlegen
     QJsonDocument jsonDatei = QJsonDocument::fromJson(dateiInhalt.toUtf8());
 
-
     //Weitere Checks
     if ( jsonDatei.isNull() )
         cerr << "JSON-Datei ist ungueltig";
@@ -188,7 +189,8 @@ void TravelAgency::readFile()
     QJsonArray jsonArray = jsonDatei.array();
 
     double flugBuchungen{0}, flugBuchungenWert{0}, mietwagenBuchungen{0}, mietwagenBuchungenWert{0},
-        hotelReservierungen{0}, hotelReservierungenWert{0}, zugBuchungen{0}, zugBuchungenWert{0};
+           hotelReservierungen{0}, hotelReservierungenWert{0}, zugBuchungen{0}, zugBuchungenWert{0};
+    int itemNumber{};
 
     for ( const QJsonValue &jsonValue : jsonArray )
     {
@@ -202,6 +204,13 @@ void TravelAgency::readFile()
         double price = jsonObject[ "price" ].toDouble();
         string fromDate = jsonObject[ "fromDate" ].toString().toStdString();
         string toDate = jsonObject[ "toDate" ].toString().toStdString();
+        itemNumber++;
+
+        if ( id.empty() || fromDate.empty() || toDate.empty() )
+            throw invalid_argument( "Leeres Attribut in Itemnummer: "  + to_string(itemNumber));
+
+        if ( price < 0 )
+            throw invalid_argument( "Price in Itemnummer "+ to_string(itemNumber) +" ist kleiner als 0" );
 
         //Zugriff auf den Type des jsonObjekts
         QString objectType = jsonObject[ "type" ].toString();
@@ -211,6 +220,9 @@ void TravelAgency::readFile()
             string pickupLocation = jsonObject[ "pickupLocation" ].toString().toStdString();
             string returnLocation = jsonObject[ "returnLocation" ].toString().toStdString();
             string company = jsonObject[ "company" ].toString().toStdString();
+
+            if ( pickupLocation.empty() || returnLocation.empty() || company.empty() )
+                throw invalid_argument( "Leeres Attribut in Itemnummer: "  + to_string(itemNumber));
 
             RentalCarReservation* rentalCarReservation = new RentalCarReservation(id, price, fromDate, toDate, pickupLocation, returnLocation, company);
 
@@ -224,6 +236,9 @@ void TravelAgency::readFile()
             string hotel = jsonObject[ "hotel" ].toString().toStdString();
             string town = jsonObject[ "town" ].toString().toStdString();
 
+            if ( hotel.empty() || town.empty() )
+                throw invalid_argument( "Leeres Attribut in Itemnummer: "  + to_string(itemNumber));
+
             HotelBooking* hotelBooking = new HotelBooking(id, price, fromDate, toDate, hotel, town);
 
             bookings.push_back( hotelBooking );
@@ -234,8 +249,17 @@ void TravelAgency::readFile()
         else if ( objectType == "Flight" )
         {
             string fromDestination = jsonObject[ "fromDest" ].toString().toStdString();
-            string toDestination = jsonObject[ "toDate" ].toString().toStdString();
-            string airline = jsonObject[ "airline "].toString().toStdString();
+            string toDestination = jsonObject[ "toDest" ].toString().toStdString();
+            string airline = jsonObject[ "airline"].toString().toStdString();
+
+            if ( fromDestination.empty() || toDestination.empty() || airline.empty() )
+                throw invalid_argument( "Leeres Attribut in Itemnummer: "  + to_string(itemNumber));
+
+            if ( fromDestination.length() > 3 )
+                throw invalid_argument("Das Zeichen des fromDestination in" + to_string(itemNumber) + "ist groesser als 3");
+
+            if ( toDestination.length() > 3 )
+                throw invalid_argument("Das Zeichen des toDestination in" + to_string(itemNumber) + "ist groesser als 3");
 
             FlightBooking* flightBooking = new FlightBooking(id, price, fromDate, toDate, fromDestination, toDestination, airline);
 
@@ -251,6 +275,9 @@ void TravelAgency::readFile()
             string departureTime = jsonObject[ "departureTime" ].toString().toStdString();
             string arrivalTime = jsonObject[ "arrivalTime" ].toString().toStdString();;
             vector<string> connectingStations;
+
+            if ( fromDestination.empty() || toDestination.empty() || departureTime.empty() || arrivalTime.empty() )
+                throw invalid_argument( "Leeres Attribut in Itemnummer: "  + to_string(itemNumber));
 
             if (jsonObject.contains("connectingStations") && jsonObject[ "connectingStations" ].isArray() )
             {
