@@ -48,7 +48,7 @@ void TravelAgency::readBinaryFile()
     if ( !binaryDatei )
         cerr << "Binaerdatei error" << endl;
 
-    while ( !binaryDatei.eof() )
+    while ( binaryDatei.read( reinterpret_cast<char*>(&type), sizeof(char)))
     {
         //um das Chararray zu terminieren (also Chararray braucht null terminator)
         id[38] = '\0';
@@ -56,7 +56,7 @@ void TravelAgency::readBinaryFile()
         toDate[8] = '\0';
 
         //Zugriff auf die Bookingvariablen von der Binaerdatei
-        binaryDatei.read( reinterpret_cast<char*>(&type), sizeof (type) );
+        //binaryDatei.read( reinterpret_cast<char*>(&type), sizeof (type) );
         binaryDatei.read( reinterpret_cast<char*>(&id), sizeof (id) - 1 );
         binaryDatei.read( reinterpret_cast<char*>(&price), sizeof (price) );
         binaryDatei.read( reinterpret_cast<char*>(&fromDate), sizeof (fromDate) - 1 );
@@ -74,6 +74,7 @@ void TravelAgency::readBinaryFile()
             binaryDatei.read( reinterpret_cast<char*>(&airline), sizeof (airline) - 1 );
 
             FlightBooking* flightBooking = new FlightBooking(id, price, fromDate, toDate, fromDestination, toDestination, airline);
+            cout << flightBooking->showDetails() << endl;
 
             bookings.push_back(flightBooking);
 
@@ -92,6 +93,7 @@ void TravelAgency::readBinaryFile()
             binaryDatei.read( reinterpret_cast<char*>(&company), sizeof (company) - 1 );
 
             RentalCarReservation* rentalCar = new RentalCarReservation(id, price, fromDate, toDate, pickupLocation, returnLocation, company);
+            cout << rentalCar->showDetails() << endl;
 
             bookings.push_back(rentalCar);
 
@@ -108,6 +110,7 @@ void TravelAgency::readBinaryFile()
             binaryDatei.read( reinterpret_cast<char*>(&hotelTown), sizeof (hotelTown) - 1 );
 
             HotelBooking* hotelBooking = new HotelBooking(id, price, fromDate, toDate, hotelName, hotelTown);
+            cout << hotelBooking->showDetails() << endl;
 
             bookings.push_back(hotelBooking);
 
@@ -140,6 +143,7 @@ void TravelAgency::readBinaryFile()
             }
 
             TrainTicket* trainBooking = new TrainTicket(id, price, fromDate, toDate, trainFromDestination, trainToDestination, departureTime, arrivalTime, connectingStations);
+            cout << trainBooking->showDetails() << endl;
 
             bookings.push_back(trainBooking);
 
@@ -156,7 +160,7 @@ void TravelAgency::readBinaryFile()
         }
     }
 
-    cout << "Es Wurden " << flightCount << " Flugbuchungen im Wert von " << flightTotalPrice << " Euro, " << rentalCarCount << " Mietwagenbuchungen im Wert von "
+    cout << endl << "Es Wurden " << flightCount << " Flugbuchungen im Wert von " << flightTotalPrice << " Euro, " << rentalCarCount << " Mietwagenbuchungen im Wert von "
          << rentalCarTotalPrice << " Euro, " << hotelBookingsCount << " Hotelreservierungen im Wert von " << hotelTotalPrice << " Euro, "
          << trainCount << " Zugbuchungen im Wert von " << trainTotalPrice << " Euro, angelegt" << endl << endl;
 
@@ -225,6 +229,7 @@ void TravelAgency::readFile()
                 throw invalid_argument( "Leeres Attribut in Itemnummer: "  + to_string(itemNumber));
 
             RentalCarReservation* rentalCarReservation = new RentalCarReservation(id, price, fromDate, toDate, pickupLocation, returnLocation, company);
+            cout << rentalCarReservation->showDetails() << endl;
 
             bookings.push_back( rentalCarReservation );
 
@@ -240,6 +245,7 @@ void TravelAgency::readFile()
                 throw invalid_argument( "Leeres Attribut in Itemnummer: "  + to_string(itemNumber));
 
             HotelBooking* hotelBooking = new HotelBooking(id, price, fromDate, toDate, hotel, town);
+            cout << hotelBooking->showDetails() << endl;
 
             bookings.push_back( hotelBooking );
 
@@ -262,6 +268,7 @@ void TravelAgency::readFile()
                 throw invalid_argument("Das Zeichen des toDestination in" + to_string(itemNumber) + "ist groesser als 3");
 
             FlightBooking* flightBooking = new FlightBooking(id, price, fromDate, toDate, fromDestination, toDestination, airline);
+            cout << flightBooking->showDetails() << endl;
 
             bookings.push_back( flightBooking );
 
@@ -290,6 +297,7 @@ void TravelAgency::readFile()
             }
 
             TrainTicket* trainObject = new TrainTicket(id, price, fromDate, toDate, fromDestination, toDestination, departureTime, arrivalTime, connectingStations);
+            cout << trainObject->showDetails() << endl;
 
             bookings.push_back( trainObject );
 
@@ -298,7 +306,7 @@ void TravelAgency::readFile()
         }
     }
 
-    cout << "Es Wurden " << flugBuchungen << " Flugbuchungen im Wert von " << flugBuchungenWert << " Euro, " << mietwagenBuchungen << " Mietwagenbuchungen im Wert von "
+    cout << endl << "Es Wurden " << flugBuchungen << " Flugbuchungen im Wert von " << flugBuchungenWert << " Euro, " << mietwagenBuchungen << " Mietwagenbuchungen im Wert von "
          << mietwagenBuchungenWert << " Euro, " << hotelReservierungen << " Hotelreservierungen im Wert von " << hotelReservierungenWert << " Euro, "
          << zugBuchungen << " Zugbuchungen im Wert von " << zugBuchungenWert << " Euro, angelegt" << endl << endl;
 
